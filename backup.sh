@@ -17,7 +17,7 @@ function FUNC_PROCESS_HANDLING() {
       exit 1
   fi
 
-  trap "rm -f -- '${BACKUP_PID}'" EXIT
+  trap "/bin/rm -f -- '${BACKUP_PID}'" EXIT
   echo $$ > "${BACKUP_PID}"
 }
 
@@ -26,7 +26,7 @@ function FUNC_PROCESS_HANDLING() {
 #
 function FUNC_TEST_NETWORK() {
   if [ "${BACKUP_PING}" != "" ]; then
-    ping -c 1 -t 2 ${BACKUP_PING} 2>/dev/null 1>/dev/null
+    /sbin/ping -c 1 -t 2 ${BACKUP_PING} 2>/dev/null 1>/dev/null
     if [ "$?" != 0 ]; then
       echo "Device is not online"
       exit 1
@@ -38,7 +38,7 @@ function FUNC_TEST_NETWORK() {
 # TEST: BATTERY
 #
 function FUNC_TEST_BATTERY() {
-  BACKUP_BATTERY_STATUS="$(ioreg -rc AppleSmartBattery)"
+  BACKUP_BATTERY_STATUS="$(/usr/sbin/ioreg -rc AppleSmartBattery)"
   BACKUP_BATTERY_CONNECT="$(echo "${BACKUP_BATTERY_STATUS}" | sed -n -e '/ExternalConnected/s/^.*"ExternalConnected"\ =\ //p')"
 
   if [ "${BACKUP_BATTERY_CONNECT}" = "No" ]; then
@@ -62,16 +62,16 @@ case $1 in
     FUNC_TEST_NETWORK
 
     if [ "${BACKUP_QUOTA}" == "" ]; then
-      borg init -v --encryption=keyfile-blake2
+      /usr/local/bin/borg init -v --encryption=keyfile-blake2
     else
-      borg init -v --encryption=keyfile-blake2 --storage-quota ${BACKUP_QUOTA}
+      /usr/local/bin/borg init -v --encryption=keyfile-blake2 --storage-quota ${BACKUP_QUOTA}
     fi
 
     echo ""
     echo "‼️ Save the following lines in a password manager ‼️"
     echo ""
 
-    borg key export --paper
+    /usr/local/bin/borg key export --paper
     ;;
 
   create)
@@ -98,13 +98,13 @@ case $1 in
       exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
       exec 2>&1
 
-      echo "## Backup is created"
-
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
-      osascript -e 'display notification "Backup is created" with title "Borgbackup"'
+      echo "## Backup is created"
+
+      /usr/bin/osascript -e 'display notification "Backup is created" with title "Borgbackup"'
     else
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_NETWORK
@@ -113,15 +113,15 @@ case $1 in
     # Mounted folders are ignored
     BACKUP_MOUNTED=$(df -h | tail -n +2 | awk '{print $9}' | grep -e '^/Users' | sed -e 's|^/|--exclude /|')
 
-    borg create --stats --exclude-from "$(dirname ${0})/.borgignore" \
+    /usr/local/bin/borg create --stats --exclude-from "$(dirname ${0})/.borgignore" \
       ${BACKUP_MOUNTED} \
       ::{hostname}-{now:%Y%m%dT%H%M%S%z} \
       ~/
 
     if [ "$?" = 0 ]; then
-      osascript -e 'display notification "Backup was created" with title "Borgbackup"'
+      /usr/bin/osascript -e 'display notification "Backup was created" with title "Borgbackup"'
     else
-      osascript -e 'display notification "‼️ Backup creation has failed" with title "Borgbackup"'
+      /usr/bin/osascript -e 'display notification "‼️ Backup creation has failed" with title "Borgbackup"'
       exit 1
     fi
 
@@ -137,13 +137,13 @@ case $1 in
       exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
       exec 2>&1
 
-      echo "## Backup is checked"
-
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
-      osascript -e 'display notification "Backup is checked" with title "Borgbackup"'
+      echo "## Backup is checked"
+
+      /usr/bin/osascript -e 'display notification "Backup is checked" with title "Borgbackup"'
     else
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_NETWORK
@@ -154,12 +154,12 @@ case $1 in
       BORG_OPS="${BORG_OPS} ${2}"
     fi
 
-    borg check --verify-data ${BORG_OPS}
+    /usr/local/bin/borg check --verify-data ${BORG_OPS}
 
     if [ "$?" = 0 ]; then
-      osascript -e 'display notification "Backup was checked" with title "Borgbackup"'
+      /usr/bin/osascript -e 'display notification "Backup was checked" with title "Borgbackup"'
     else
-      osascript -e 'display notification "‼️ Backup check has failed" with title "Borgbackup"'
+      /usr/bin/osascript -e 'display notification "‼️ Backup check has failed" with title "Borgbackup"'
       exit 1
     fi
 
@@ -173,7 +173,7 @@ case $1 in
     FUNC_PROCESS_HANDLING $1
     FUNC_TEST_NETWORK
 
-    borg list --short
+    /usr/local/bin/borg list --short
     ;;
 
   prune)
@@ -181,20 +181,20 @@ case $1 in
       exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
       exec 2>&1
 
-      echo "## Backup is cleaned up"
-
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
-      osascript -e 'display notification "Backup is cleaned up" with title "Borgbackup"'
+      echo "## Backup is cleaned up"
+
+      /usr/bin/osascript -e 'display notification "Backup is cleaned up" with title "Borgbackup"'
     else
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_NETWORK
     fi
 
 
-    borg prune --stats -v --list \
+    /usr/local/bin/borg prune --stats -v --list \
       --prefix='{hostname}-' \
       --keep-last 9 \
       --keep-daily=8 \
@@ -203,9 +203,9 @@ case $1 in
 
 
     if [ "$?" = 0 ]; then
-      osascript -e 'display notification "Backup was cleaned up" with title "Borgbackup"'
+      /usr/bin/osascript -e 'display notification "Backup was cleaned up" with title "Borgbackup"'
     else
-      osascript -e 'display notification "‼️ Backup clean up has failed" with title "Borgbackup"'
+      /usr/bin/osascript -e 'display notification "‼️ Backup clean up has failed" with title "Borgbackup"'
       exit 1
     fi
 
@@ -233,7 +233,7 @@ case $1 in
       exit 1
     fi
 
-    borg diff "::${2}" "${3}"
+    /usr/local/bin/borg diff "::${2}" "${3}"
     ;;
 
   delete)
@@ -247,7 +247,7 @@ case $1 in
       exit 1
     fi
 
-    borg delete -v --stats "::${2}"
+    /usr/local/bin/borg delete -v --stats "::${2}"
     ;;
 
   mount)
@@ -268,7 +268,7 @@ case $1 in
       exit 1
     fi
 
-    borg mount "::${2}" "${3}"
+    /usr/local/bin/borg mount "::${2}" "${3}"
     ;;
 
   umount)
@@ -281,7 +281,7 @@ case $1 in
       exit 1
     fi
 
-    borg umount "${2}"
+    /usr/local/bin/borg umount "${2}"
     ;;
 
   *)
