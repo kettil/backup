@@ -1,0 +1,38 @@
+sh:/**/.DS_Store
+sh:/**/.Trash
+sh:/**/node_modules
+
+# Folder from this script
+/Users/*/.backup
+
+# Protected by Apple security system
+/Users/*/Library/Application Support/AddressBook
+/Users/*/Library/Application Support/CallHistoryDB
+/Users/*/Library/Application Support/CallHistoryTransactions
+/Users/*/Library/Application Support/MobileSync
+/Users/*/Library/Application Support/com.apple.TCC
+/Users/*/Library/Caches
+/Users/*/Library/Calendars
+/Users/*/Library/Containers/com.apple.Home
+/Users/*/Library/Containers/com.apple.Safari
+/Users/*/Library/Containers/com.apple.VoiceMemos
+/Users/*/Library/Containers/com.apple.iChat
+/Users/*/Library/Containers/com.apple.mail
+/Users/*/Library/Containers/com.apple.stocks
+/Users/*/Library/Containers/com.docker.docker/Data/vms
+/Users/*/Library/Cookies
+/Users/*/Library/HomeKit
+/Users/*/Library/IdentityServices
+/Users/*/Library/Mail
+/Users/*/Library/Messages
+/Users/*/Library/Metadata/CoreSpotlight
+/Users/*/Library/Metadata/com.apple.IntelligentSuggestions
+/Users/*/Library/PersonalizationPortrait
+/Users/*/Library/Preferences/com.apple.AddressBook.*
+/Users/*/Library/Preferences/com.apple.AddressBook.*
+/Users/*/Library/Preferences/com.apple.homed.*
+/Users/*/Library/Preferences/com.apple.homed.notbackedup.*
+/Users/*/Library/Preferences/com.apple.mail-shared.*
+/Users/*/Library/Safari
+/Users/*/Library/Suggestions
+/Users/*/Pictures/*.photoslibrary
