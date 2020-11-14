@@ -3,6 +3,9 @@
 ## First steps
 
 ```bash
+# Install borgbackup over homebrew
+brew install borgbackup
+
 # Clone the repo
 git clone https://github.com/kettil/backup.git ~/.backup
 cd ~/.backup
