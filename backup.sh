@@ -103,8 +103,6 @@ case $1 in
       FUNC_TEST_NETWORK
 
       echo "## Backup is created"
-
-      /usr/bin/osascript -e 'display notification "Backup is created" with title "Borgbackup"'
     else
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_NETWORK
@@ -118,10 +116,8 @@ case $1 in
       ::{hostname}-{now:%Y%m%dT%H%M%S%z} \
       ~/
 
-    if [ "$?" = 0 ]; then
-      /usr/bin/osascript -e 'display notification "Backup was created" with title "Borgbackup"'
-    else
-      /usr/bin/osascript -e 'display notification "‼️ Backup creation has failed" with title "Borgbackup"'
+    if [ "$?" != "0" ]; then
+      /usr/bin/osascript -e 'display notification "‼️ Backup creation has failed ‼️" with title "Borgbackup"'
       exit 1
     fi
 
