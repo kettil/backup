@@ -5,6 +5,7 @@ source "$(dirname ${0})/.env"
 BACKUP_PID="$(dirname ${0})/.run-${1}.pid"
 BACKUP_LOG="$(dirname ${0})/logs/log-$(date +"%Y-%m").txt"
 BACKUP_FILE_CREATE="$(dirname ${0})/.lastBackup"
+BACKUP_FILE_CHECK="$(dirname ${0})/.lastCheck"
 BACKUP_FILE_PRUNE="$(dirname ${0})/.lastPrune"
 
 BACKUP_CRON="--cron"
@@ -148,6 +149,8 @@ case $1 in
       exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
       exec 2>&1
 
+      FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CHECK}" "${BACKUP_INTERVAL_CHECK} * 60 * 60"
+
       FUNC_PROCESS_HANDLING
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
@@ -173,6 +176,8 @@ case $1 in
       /usr/bin/osascript -e 'display notification "‼️ Backup check has failed" with title "Borgbackup"'
       exit 1
     fi
+
+    echo -e "${BACKUP_TIME_NOW}\n# $(date -r ${BACKUP_TIME_NOW} +%FT%T%z)" > "${BACKUP_FILE_CHECK}"
 
     if [ "${2}" = "${BACKUP_CRON}" ]; then
       echo "## Backup was checked"

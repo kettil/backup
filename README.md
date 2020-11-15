@@ -28,10 +28,10 @@ nano .env
 To make a regular backup, the following lines must be added to the crontab.
 
 ```bash
-# every half hour
-*/30 * * * * ~/.backup/backup.sh create --cron > /dev/null 2>&1
-# every sunday at 18:55
-55 * * * * ~/.backup/backup.sh prune --cron > /dev/null 2>&1
-# first saturday of the month at 18:55
-55 18 1-7 * * [ "$(date '+\%u')" = "6" ] && ~/.backup/backup.sh check --cron > /dev/null 2>&1
+# create backup
+0,30  *     * * * ~/.backup/backup.sh create --cron > /dev/null 2>&1
+# prune backup
+55    19-23 * * * ~/.backup/backup.sh prune --cron > /dev/null 2>&1
+# check backup
+25,55 17-18 * * * ~/.backup/backup.sh check --cron > /dev/null 2>&1
 ```
