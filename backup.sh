@@ -89,7 +89,7 @@ BACKUP_TIME_NOW="$(date +%s)"
 
 case $1 in
   init)
-    FUNC_PROCESS_HANDLING $1
+    FUNC_PROCESS_HANDLING
     FUNC_TEST_NETWORK
 
     if [ "${BACKUP_QUOTA}" == "" ]; then
@@ -112,13 +112,13 @@ case $1 in
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CREATE}" "${BACKUP_INTERVAL_CREATE} * 60 * 60"
 
-      FUNC_PROCESS_HANDLING $1
+      FUNC_PROCESS_HANDLING
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
       echo "## Backup is created"
     else
-      FUNC_PROCESS_HANDLING $1
+      FUNC_PROCESS_HANDLING
       FUNC_TEST_NETWORK
     fi
 
@@ -148,7 +148,7 @@ case $1 in
       exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
       exec 2>&1
 
-      FUNC_PROCESS_HANDLING $1
+      FUNC_PROCESS_HANDLING
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
@@ -156,7 +156,7 @@ case $1 in
 
       /usr/bin/osascript -e 'display notification "Backup is checked" with title "Borgbackup"'
     else
-      FUNC_PROCESS_HANDLING $1
+      FUNC_PROCESS_HANDLING
       FUNC_TEST_NETWORK
     fi
 
@@ -181,7 +181,7 @@ case $1 in
     ;;
 
   list)
-    FUNC_PROCESS_HANDLING $1
+    FUNC_PROCESS_HANDLING
     FUNC_TEST_NETWORK
 
     /usr/local/bin/borg list --short
@@ -194,7 +194,7 @@ case $1 in
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_PRUNE}" "${BACKUP_INTERVAL_PRUNE} * 60 * 60 * 24"
 
-      FUNC_PROCESS_HANDLING $1
+      FUNC_PROCESS_HANDLING
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
@@ -202,7 +202,7 @@ case $1 in
 
       /usr/bin/osascript -e 'display notification "Backup is cleaned up" with title "Borgbackup"'
     else
-      FUNC_PROCESS_HANDLING $1
+      FUNC_PROCESS_HANDLING
       FUNC_TEST_NETWORK
     fi
 
@@ -231,7 +231,7 @@ case $1 in
     ;;
 
   diff)
-    FUNC_PROCESS_HANDLING $1
+    FUNC_PROCESS_HANDLING
     FUNC_TEST_NETWORK
 
     if [ "${2}" = "" ]; then
@@ -252,7 +252,7 @@ case $1 in
     ;;
 
   delete)
-    FUNC_PROCESS_HANDLING $1
+    FUNC_PROCESS_HANDLING
     FUNC_TEST_NETWORK
 
     if [ "${2}" = "" ]; then
@@ -266,7 +266,7 @@ case $1 in
     ;;
 
   mount)
-    FUNC_PROCESS_HANDLING $1
+    FUNC_PROCESS_HANDLING
     FUNC_TEST_NETWORK
 
     if [ "${2}" = "" ]; then
@@ -287,7 +287,7 @@ case $1 in
     ;;
 
   umount)
-    FUNC_PROCESS_HANDLING $1
+    FUNC_PROCESS_HANDLING
 
     if [ "${2}" = "" ]; then
       echo "Mountpoint is missing"
