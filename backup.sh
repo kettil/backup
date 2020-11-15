@@ -2,7 +2,7 @@
 
 source "$(dirname ${0})/.env"
 
-BACKUP_PID="$(dirname ${0})/.run-${1}.pid"
+BACKUP_PID="$(dirname ${0})/.run.pid"
 BACKUP_LOG="$(dirname ${0})/logs/log-$(date +"%Y-%m").txt"
 BACKUP_FILE_CREATE="$(dirname ${0})/.lastBackup"
 BACKUP_FILE_CHECK="$(dirname ${0})/.lastCheck"
@@ -47,7 +47,7 @@ function FUNC_PROCESS_HANDLING() {
   fi
 
   trap "/bin/rm -f -- '${BACKUP_PID}'" EXIT
-  echo $$ > "${BACKUP_PID}"
+  echo "$$ [${1}]" > "${BACKUP_PID}"
 }
 
 #
@@ -90,7 +90,7 @@ BACKUP_TIME_NOW="$(date +%s)"
 
 case $1 in
   init)
-    FUNC_PROCESS_HANDLING
+    FUNC_PROCESS_HANDLING "${1}"
     FUNC_TEST_NETWORK
 
     if [ "${BACKUP_QUOTA}" == "" ]; then
@@ -113,13 +113,13 @@ case $1 in
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CREATE}" "${BACKUP_INTERVAL_CREATE} * 60 * 60"
 
-      FUNC_PROCESS_HANDLING
+      FUNC_PROCESS_HANDLING "${1}"
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
       echo "## Backup is created"
     else
-      FUNC_PROCESS_HANDLING
+      FUNC_PROCESS_HANDLING "${1}"
       FUNC_TEST_NETWORK
     fi
 
@@ -151,7 +151,7 @@ case $1 in
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CHECK}" "${BACKUP_INTERVAL_CHECK} * 60 * 60"
 
-      FUNC_PROCESS_HANDLING
+      FUNC_PROCESS_HANDLING "${1}"
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
@@ -159,7 +159,7 @@ case $1 in
 
       /usr/bin/osascript -e 'display notification "Backup is checked" with title "Borgbackup"'
     else
-      FUNC_PROCESS_HANDLING
+      FUNC_PROCESS_HANDLING "${1}"
       FUNC_TEST_NETWORK
     fi
 
@@ -186,7 +186,7 @@ case $1 in
     ;;
 
   list)
-    FUNC_PROCESS_HANDLING
+    FUNC_PROCESS_HANDLING "${1}"
     FUNC_TEST_NETWORK
 
     /usr/local/bin/borg list --short
@@ -199,7 +199,7 @@ case $1 in
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_PRUNE}" "${BACKUP_INTERVAL_PRUNE} * 60 * 60 * 24"
 
-      FUNC_PROCESS_HANDLING
+      FUNC_PROCESS_HANDLING "${1}"
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
 
@@ -207,7 +207,7 @@ case $1 in
 
       /usr/bin/osascript -e 'display notification "Backup is cleaned up" with title "Borgbackup"'
     else
-      FUNC_PROCESS_HANDLING
+      FUNC_PROCESS_HANDLING "${1}"
       FUNC_TEST_NETWORK
     fi
 
@@ -236,7 +236,7 @@ case $1 in
     ;;
 
   diff)
-    FUNC_PROCESS_HANDLING
+    FUNC_PROCESS_HANDLING "${1}"
     FUNC_TEST_NETWORK
 
     if [ "${2}" = "" ]; then
@@ -257,7 +257,7 @@ case $1 in
     ;;
 
   delete)
-    FUNC_PROCESS_HANDLING
+    FUNC_PROCESS_HANDLING "${1}"
     FUNC_TEST_NETWORK
 
     if [ "${2}" = "" ]; then
@@ -271,7 +271,7 @@ case $1 in
     ;;
 
   mount)
-    FUNC_PROCESS_HANDLING
+    FUNC_PROCESS_HANDLING "${1}"
     FUNC_TEST_NETWORK
 
     if [ "${2}" = "" ]; then
@@ -292,7 +292,7 @@ case $1 in
     ;;
 
   umount)
-    FUNC_PROCESS_HANDLING
+    FUNC_PROCESS_HANDLING "${1}"
 
     if [ "${2}" = "" ]; then
       echo "Mountpoint is missing"
