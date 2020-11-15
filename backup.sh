@@ -3,10 +3,38 @@
 source "$(dirname ${0})/.env"
 
 BACKUP_PID="$(dirname ${0})/.run-${1}.pid"
-BACKUP_RUN="$(dirname ${0})/.lastBackup"
 BACKUP_LOG="$(dirname ${0})/logs/log-$(date +"%Y-%m").txt"
+BACKUP_FILE_CREATE="$(dirname ${0})/.lastBackup"
+BACKUP_FILE_PRUNE="$(dirname ${0})/.lastPrune"
 
 BACKUP_CRON="--cron"
+
+#
+# LAST RUN HANDLING
+#
+function FUNC_LAST_RUN() {
+  BACKUP_LAST_RUN_NOW="${1}"
+  BACKUP_LAST_RUN_FILE="${2}"
+  BACKUP_LAST_RUN_INTERVAL="${3}"
+
+  touch "${BACKUP_LAST_RUN_FILE}"
+
+  # Read the timestamp from last run
+  BACKUP_LAST_RUN_LAST="$(cat "${BACKUP_LAST_RUN_FILE}" | head -n 1 | sed -e 's/[^0-9]//g')"
+  # Defined waiting time until the next run.
+  BACKUP_LAST_RUN_WAIT="$(bc <<< "${BACKUP_LAST_RUN_INTERVAL} - 60")"
+
+  if [ "${BACKUP_LAST_RUN_LAST}" = "" ]; then
+    BACKUP_LAST_RUN_LAST="0"
+  fi
+
+  BACKUP_LAST_RUN_DIFF="$(bc <<< "${BACKUP_LAST_RUN_NOW} - ${BACKUP_LAST_RUN_LAST}")"
+
+  if [ "${BACKUP_LAST_RUN_DIFF}" -lt "${BACKUP_LAST_RUN_WAIT}" ]; then
+    exit 0
+  fi
+
+}
 
 #
 # PROCESS HANLDING
@@ -56,6 +84,9 @@ function FUNC_TEST_BATTERY() {
 # Create logs folder
 mkdir -p "$(dirname ${BACKUP_LOG})"
 
+# Used for last run
+BACKUP_TIME_NOW="$(date +%s)"
+
 case $1 in
   init)
     FUNC_PROCESS_HANDLING $1
@@ -75,28 +106,11 @@ case $1 in
     ;;
 
   create)
-    BACKUP_TIME_NOW="$(date +%s)"
-
     if [ "${2}" = "${BACKUP_CRON}" ]; then
-      touch "${BACKUP_RUN}"
-
-      # Read the timestamp from last run
-      BACKUP_TIME_LAST="$(cat "${BACKUP_RUN}" | head -n 1 | sed -e 's/[^0-9]//g')"
-      # Defined waiting time until the next run.
-      BACKUP_TIME_WAIT="$(bc <<< "${BACKUP_INTERVAL} * 60 * 60 - 60")"
-
-      if [ "${BACKUP_TIME_LAST}" = "" ]; then
-        BACKUP_TIME_LAST="0"
-      fi
-
-      BACKUP_TIME_DIFF="$(bc <<< "${BACKUP_TIME_NOW} - ${BACKUP_TIME_LAST}")"
-
-      if [ "${BACKUP_TIME_DIFF}" -lt "${BACKUP_TIME_WAIT}" ]; then
-        exit 0
-      fi
-
       exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
       exec 2>&1
+
+      FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CREATE}" "${BACKUP_INTERVAL_CREATE} * 60 * 60"
 
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_BATTERY
@@ -121,10 +135,11 @@ case $1 in
       exit 1
     fi
 
+    echo -e "${BACKUP_TIME_NOW}\n# $(date -r ${BACKUP_TIME_NOW} +%FT%T%z)" > "${BACKUP_FILE_CREATE}"
+
     if [ "${2}" = "${BACKUP_CRON}" ]; then
       echo "## Backup was created"
       echo "################################################################################"
-      echo -e "${BACKUP_TIME_NOW}\n# $(date -r ${BACKUP_TIME_NOW} +%FT%T%z)" > "${BACKUP_RUN}"
     fi
     ;;
 
@@ -177,6 +192,8 @@ case $1 in
       exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
       exec 2>&1
 
+      FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_PRUNE}" "${BACKUP_INTERVAL_PRUNE} * 60 * 60 * 24"
+
       FUNC_PROCESS_HANDLING $1
       FUNC_TEST_BATTERY
       FUNC_TEST_NETWORK
@@ -204,6 +221,8 @@ case $1 in
       /usr/bin/osascript -e 'display notification "‼️ Backup clean up has failed" with title "Borgbackup"'
       exit 1
     fi
+
+    echo -e "${BACKUP_TIME_NOW}\n# $(date -r ${BACKUP_TIME_NOW} +%FT%T%z)" > "${BACKUP_FILE_PRUNE}"
 
     if [ "${2}" = "${BACKUP_CRON}" ]; then
       echo "## Backup was cleaned up"

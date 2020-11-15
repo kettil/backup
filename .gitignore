@@ -2,6 +2,6 @@
 
 .env
 .run-*
-.lastBackup
+.last*
 .borgignore
 logs
