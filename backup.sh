@@ -2,13 +2,16 @@
 
 source "$(dirname ${0})/.env"
 
-BACKUP_PID="$(dirname ${0})/.run.pid"
-BACKUP_LOG="$(dirname ${0})/logs/log-$(date +"%Y-%m").txt"
+BACKUP_FILE_PID="$(dirname ${0})/.run.pid"
+BACKUP_FILE_LOG="$(dirname ${0})/logs/log-$(date +"%Y-%m").txt"
 BACKUP_FILE_CREATE="$(dirname ${0})/.lastBackup"
 BACKUP_FILE_CHECK="$(dirname ${0})/.lastCheck"
 BACKUP_FILE_PRUNE="$(dirname ${0})/.lastPrune"
 
 BACKUP_CRON="--cron"
+
+# Used for last run
+BACKUP_TIME_NOW="$(date +%s)"
 
 #
 # LAST RUN HANDLING
@@ -41,13 +44,26 @@ function FUNC_LAST_RUN() {
 # PROCESS HANLDING
 #
 function FUNC_PROCESS_HANDLING() {
-  if [ -f "${BACKUP_PID}" ]; then
-      echo "Process is already running with PID $(cat ${BACKUP_PID})"
-      exit 1
+  if [ -f "${BACKUP_FILE_PID}" ]; then
+      BACKUP_PID_ID="$(cat $BACKUP_FILE_PID | head -n 1 | sed -e 's|^\([0-9]*\).*$|\1|')"
+
+      if [ "${BACKUP_PID_ID}" != "" ]; then
+        BACKUP_PID_COUNT="$(ps -p ${BACKUP_PID_ID} | grep ${BACKUP_PID_ID} | wc -l)"
+
+        if [ ${BACKUP_PID_COUNT} = 1 ]; then
+          echo "Process is already running with PID $(cat ${BACKUP_FILE_PID} | head -n 1)"
+          exit 1
+        else
+          echo "Found old PID file: $(cat ${BACKUP_FILE_PID} | head -n 1)"
+        fi
+      else
+        echo "PID could not be extracted: $(cat ${BACKUP_FILE_PID} | head -n 1)"
+        exit 1
+      fi
   fi
 
-  trap "/bin/rm -f -- '${BACKUP_PID}'" EXIT
-  echo "$$ [${1}]" > "${BACKUP_PID}"
+  trap "/bin/rm -f -- '${BACKUP_FILE_PID}'" EXIT
+  echo -e "$$ [${1}]\n# $(date -r ${BACKUP_TIME_NOW} +%FT%T%z)" > "${BACKUP_FILE_PID}"
 }
 
 #
@@ -83,10 +99,7 @@ function FUNC_TEST_BATTERY() {
 }
 
 # Create logs folder
-mkdir -p "$(dirname ${BACKUP_LOG})"
-
-# Used for last run
-BACKUP_TIME_NOW="$(date +%s)"
+mkdir -p "$(dirname ${BACKUP_FILE_LOG})"
 
 case $1 in
   init)
@@ -108,7 +121,7 @@ case $1 in
 
   create)
     if [ "${2}" = "${BACKUP_CRON}" ]; then
-      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
+      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_FILE_LOG})
       exec 2>&1
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CREATE}" "${BACKUP_INTERVAL_CREATE} * 60 * 60"
@@ -146,7 +159,7 @@ case $1 in
 
   check)
     if [ "${2}" = "${BACKUP_CRON}" ]; then
-      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
+      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_FILE_LOG})
       exec 2>&1
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CHECK}" "${BACKUP_INTERVAL_CHECK} * 60 * 60"
@@ -194,7 +207,7 @@ case $1 in
 
   prune)
     if [ "${2}" = "${BACKUP_CRON}" ]; then
-      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_LOG})
+      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_FILE_LOG})
       exec 2>&1
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_PRUNE}" "${BACKUP_INTERVAL_PRUNE} * 60 * 60 * 24"
