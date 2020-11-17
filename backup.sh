@@ -2,13 +2,9 @@
 
 source "$(dirname ${0})/.env"
 
-BACKUP_FILE_PID="$(dirname ${0})/.run.pid"
-BACKUP_FILE_LOG="$(dirname ${0})/logs/log-$(date +"%Y-%m").txt"
-BACKUP_FILE_CREATE="$(dirname ${0})/.lastBackup"
-BACKUP_FILE_CHECK="$(dirname ${0})/.lastCheck"
-BACKUP_FILE_PRUNE="$(dirname ${0})/.lastPrune"
-
-BACKUP_CRON="--cron"
+BACKUP_LOG="$(dirname ${0})/log.sh"
+BACKUP_CMD_CRON="--cron"
+BACKUP_CMD_REPAIR="--repair"
 
 # Used for last run
 BACKUP_TIME_NOW="$(date +%s)"
@@ -98,8 +94,9 @@ function FUNC_TEST_BATTERY() {
   fi
 }
 
-# Create logs folder
-mkdir -p "$(dirname ${BACKUP_FILE_LOG})"
+# ####################
+# ## SWITCH         ##
+# ####################
 
 case $1 in
   init)
@@ -120,8 +117,8 @@ case $1 in
     ;;
 
   create)
-    if [ "${2}" = "${BACKUP_CRON}" ]; then
-      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_FILE_LOG})
+    if [ "${2}" = "${BACKUP_CMD_CRON}" ]; then
+      exec > >(${BACKUP_LOG})
       exec 2>&1
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CREATE}" "${BACKUP_INTERVAL_CREATE} * 60 * 60"
@@ -151,15 +148,15 @@ case $1 in
 
     echo -e "${BACKUP_TIME_NOW}\n# $(date -r ${BACKUP_TIME_NOW} +%FT%T%z)" > "${BACKUP_FILE_CREATE}"
 
-    if [ "${2}" = "${BACKUP_CRON}" ]; then
+    if [ "${2}" = "${BACKUP_CMD_CRON}" ]; then
       echo "## Backup was created"
       echo "################################################################################"
     fi
     ;;
 
   check)
-    if [ "${2}" = "${BACKUP_CRON}" ]; then
-      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_FILE_LOG})
+    if [ "${2}" = "${BACKUP_CMD_CRON}" ]; then
+      exec > >(${BACKUP_LOG})
       exec 2>&1
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_CHECK}" "${BACKUP_INTERVAL_CHECK} * 60 * 60"
@@ -177,7 +174,7 @@ case $1 in
     fi
 
     BORG_OPS=""
-    if [ "${2}" = "--repair" ]; then
+    if [ "${2}" = "${BACKUP_CMD_REPAIR}" ]; then
       BORG_OPS="${BORG_OPS} ${2}"
     fi
 
@@ -192,7 +189,7 @@ case $1 in
 
     echo -e "${BACKUP_TIME_NOW}\n# $(date -r ${BACKUP_TIME_NOW} +%FT%T%z)" > "${BACKUP_FILE_CHECK}"
 
-    if [ "${2}" = "${BACKUP_CRON}" ]; then
+    if [ "${2}" = "${BACKUP_CMD_CRON}" ]; then
       echo "## Backup was checked"
       echo "################################################################################"
     fi
@@ -206,8 +203,8 @@ case $1 in
     ;;
 
   prune)
-    if [ "${2}" = "${BACKUP_CRON}" ]; then
-      exec > >(perl -pe 'use POSIX strftime; print strftime "[%Y-%m-%d %H:%M:%S%z] ", localtime' | tee -ai ${BACKUP_FILE_LOG})
+    if [ "${2}" = "${BACKUP_CMD_CRON}" ]; then
+      exec > >(${BACKUP_LOG})
       exec 2>&1
 
       FUNC_LAST_RUN "${BACKUP_TIME_NOW}" "${BACKUP_FILE_PRUNE}" "${BACKUP_INTERVAL_PRUNE} * 60 * 60 * 24"
@@ -242,7 +239,7 @@ case $1 in
 
     echo -e "${BACKUP_TIME_NOW}\n# $(date -r ${BACKUP_TIME_NOW} +%FT%T%z)" > "${BACKUP_FILE_PRUNE}"
 
-    if [ "${2}" = "${BACKUP_CRON}" ]; then
+    if [ "${2}" = "${BACKUP_CMD_CRON}" ]; then
       echo "## Backup was cleaned up"
       echo "################################################################################"
     fi
@@ -319,8 +316,8 @@ case $1 in
 
   *)
     echo "${0} init|list"
-    echo "${0} create|check|prune [${BACKUP_CRON}]"
-    echo "${0} check --repair"
+    echo "${0} create|check|prune [${BACKUP_CMD_CRON}]"
+    echo "${0} check ${BACKUP_CMD_REPAIR}"
     echo "${0} diff <archive-1> <archive-2>"
     echo "${0} delete <archive>"
     echo "${0} mount <archive> <mountpoint>"
