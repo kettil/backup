@@ -1,6 +1,14 @@
+# common
 sh:/**/.DS_Store
 sh:/**/.Trash
 sh:/**/node_modules
+
+# node.js
+/Users/*/.npm/_logs
+/Users/*/.npm/_cacache
+/Users/*/.npm/_prebuilds
+/Users/*/.npm/_libvips
+/Users/*/.nvm/versions/node
 
 # Folder from this script
 /Users/*/.backup
