@@ -98,6 +98,8 @@ function FUNC_TEST_BATTERY() {
 # ## SWITCH         ##
 # ####################
 
+BORG_OPS=""
+
 case $1 in
   init)
     FUNC_PROCESS_HANDLING "${1}"
@@ -131,6 +133,8 @@ case $1 in
     else
       FUNC_PROCESS_HANDLING "${1}"
       FUNC_TEST_NETWORK
+
+      BORG_OPS="${BORG_OPS} --progress"
     fi
 
     # Mounted folders are ignored
@@ -138,6 +142,7 @@ case $1 in
 
     /usr/local/bin/borg create --stats --exclude-from "$(dirname ${0})/.borgignore" \
       ${BACKUP_MOUNTED} \
+      ${BORG_OPS} \
       ::{hostname}-{now:%Y%m%dT%H%M%S%z} \
       ~/
 
@@ -171,14 +176,15 @@ case $1 in
     else
       FUNC_PROCESS_HANDLING "${1}"
       FUNC_TEST_NETWORK
+
+      BORG_OPS="${BORG_OPS} --progress"
     fi
 
-    BORG_OPS=""
     if [ "${2}" = "${BACKUP_CMD_REPAIR}" ]; then
       BORG_OPS="${BORG_OPS} ${2}"
     fi
 
-    /usr/local/bin/borg check --verify-data ${BORG_OPS}
+    /usr/local/bin/borg check ${BORG_OPS}
 
     if [ "$?" = 0 ]; then
       /usr/bin/osascript -e 'display notification "Backup was checked" with title "Borgbackup"'
